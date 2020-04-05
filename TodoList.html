@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+        <title>TodoList</title>
+        <style>
+            .completed {
+                text-decoration: line-through;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="app" class="container my-3">
+            <div class="input-group mb-3">
+                <div class="input-group-prepend">
+                    <span class="input-group-text" id="basic-addon1">待辦事項</span>
+                </div>
+                <input
+                    type="text"
+                    class="form-control"
+                    v-model="newTodo"
+                    @keyup.enter="addTodo"
+                    placeholder="準備要做的任務"
+                />
+                <div class="input-group-append">
+                    <button class="btn btn-primary" type="button" @click="addTodo">新增</button>
+                </div>
+            </div>
+            <div class="card text-center">
+                <div class="card-header">
+                    <ul class="nav nav-tabs card-header-tabs">
+                        <li class="nav-item">
+                            <a
+                                class="nav-link "
+                                :class="{'active': visibility == 'all'}"
+                                @click="visibility='all'"
+                                href="#"
+                                >全部</a
+                            >
+                        </li>
+                        <li class="nav-item">
+                            <a
+                                class="nav-link "
+                                :class="{'active': visibility == 'processing'}"
+                                @click="visibility='processing'"
+                                href="#"
+                                >進行中</a
+                            >
+                        </li>
+                        <li class="nav-item">
+                            <a
+                                class="nav-link"
+                                :class="{'active': visibility == 'completed'}"
+                                @click="visibility='completed'"
+                                href="#"
+                                >已完成</a
+                            >
+                        </li>
+                    </ul>
+                </div>
+                <ul class="list-group list-group-flush text-left">
+                    <li class="list-group-item" v-for="(item,key) in filterTodos" @dblclick="editTodo(item)">
+                        <div class="d-flex" v-if="item.id != cacheTodo.id">
+                            <div class="form-check">
+                                <input
+                                    type="checkbox"
+                                    class="form-check-input"
+                                    :id="item.id"
+                                    v-model="item.completed"
+                                />
+                                <label class="form-check-label" :for="item.id" :class="{'completed':item.completed}">
+                                    {{item.title}}
+                                </label>
+                            </div>
+                            <button type="button" class="close ml-auto" aria-label="Close" @click="removeTodo(item)">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <input
+                            type="text"
+                            class="form-control"
+                            v-model="cacheTitle"
+                            v-if="item.id === cacheTodo.id"
+                            @keyup.esc="cancelEdit()"
+                            @keyup.enter="saveEdit(item)"
+                        />
+                    </li>
+
+                    <li class="list-group-item"></li>
+                </ul>
+                <div class="card-footer d-flex justify-content-between">
+                    <span>還有 {{total}} 筆任務未完成</span>
+                    <a href="#" @click="deleteAll()">清除所有任務</a>
+                </div>
+            </div>
+        </div>
+    </body>
+    <script>
+        let app = new Vue({
+            el: '#app',
+            data: {
+                newTodo: '',
+                todos: [],
+                visibility: 'all',
+                cacheTodo: {},
+                cacheTitle: {},
+            },
+            methods: {
+                addTodo: function() {
+                    let value = this.newTodo.trim();
+                    let timestamp = Math.floor(Date.now());
+
+                    if (!value) {
+                        return;
+                    }
+
+                    this.todos.push({
+                        id: timestamp,
+                        title: value,
+                        completed: false,
+                    });
+                    this.newTodo = '';
+                },
+                removeTodo: function(todo) {
+                    let newIndex = '';
+                    this.todos.forEach((item, key) => {
+                        if (todo.id == item.id) {
+                            newIndex = key;
+                        }
+                    });
+                    this.todos.splice(newIndex, 1);
+                },
+                editTodo: function(item) {
+                    this.cacheTodo = item;
+                    this.cacheTitle = item.title;
+                },
+                cancelEdit: function() {
+                    this.cacheTodo = {};
+                },
+                saveEdit: function(item) {
+                    item.title = this.cacheTitle;
+                    this.cacheTitle = '';
+                    this.cacheTodo = {};
+                },
+                deleteAll: function() {
+                    this.todos = [];
+                },
+            },
+            computed: {
+                filterTodos: function() {
+                    if (this.visibility == 'all') {
+                        return this.todos;
+                    }
+
+                    if (this.visibility == 'processing') {
+                        let newTodo = [];
+                        this.todos.forEach(item => {
+                            if (!item.completed) {
+                                newTodo.push(item);
+                            }
+                        });
+                        return newTodo;
+                    }
+
+                    if (this.visibility == 'completed') {
+                        let completedTodos = [];
+                        this.todos.forEach(item => {
+                            if (item.completed) {
+                                completedTodos.push(item);
+                            }
+                        });
+                        return completedTodos;
+                    }
+                },
+                total: function() {
+                    let sum = 0;
+                    this.todos.forEach(item => {
+                        if (!item.completed) {
+                            sum++;
+                        }
+                    });
+                    return sum;
+                },
+            },
+        });
+    </script>
+</html>
